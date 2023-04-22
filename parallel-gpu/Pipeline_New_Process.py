@@ -1,7 +1,6 @@
 import sys
 import os
 
-import blast2msa_new as bm
 from decimal import Decimal
 import Find_Parents as fp
 from configure import database_dir, blast_file, go_term_dir,num_threads
@@ -9,47 +8,35 @@ import multiprocessing as mp
 from multiprocessing import Pool
 from contextlib import closing
 
-num_threads = min(num_threads, mp.cpu_count()//2)
+num_threads = min(num_threads, mp.cpu_count()-4)
 # note: the maximum number of threads is half of the number of CPUs
 # to avoid the nultiprocessing error
 
-def extract_msa(args): # extract blast
-    workdir, type = args[0], args[1]
 
-    xml_file = workdir + "/blast_" + type + ".xml"
-    seq_file = workdir + "/seq.fasta"
-    msa_file = workdir + "/blast_" + type + ".msa"
+def read_go(gofile):  # read GO Terms
 
-    if(os.path.exists(xml_file)==False or os.path.getsize(xml_file)==0):
-        print("blast.xml is not exist")
-        return
-
-    bm.run_extract_msa(seq_file, xml_file, msa_file)
-
-def create_protein_list(args):  # create protein list
-    workdir, go_dict, type = args[0], args[1], args[2]
-
-    msa_file = workdir + "/blast_" + type + ".msa"
-
-    template_list = []
-
-    f = open(msa_file, "r")
+    f = open(gofile, "r")
     text = f.read()
     f.close()
 
+    go_dict = dict()
+
     for line in text.splitlines():
         line = line.strip()
-        if(line.startswith(">")):
-            template = line.strip().split("\t")[0][1:]
-            score = line.strip().split("\t")[1]
-            if(template in go_dict):
-                template_list.append([template, score])
+        values = line.split()
+        go_dict[values[0]] = values[1].split(",")
 
-    f = open(workdir + "/" + type + "_protein_list", "w")
-    for template, score in template_list:
-        f.write(template + " " + score + "\n")
-    f.flush()
-    f.close()
+    return go_dict
+
+
+# golabl variables for multiprocessing
+obo_dict = fp.get_obo_dict()
+go_dict_aspects = {}
+aspects = ["MF", "BP", "CC"]
+for aspect in aspects:
+    go_term_file = go_term_dir + "/" + aspect + "_Term"
+    go_dict = read_go(go_term_file)
+    go_dict_aspects[aspect] = go_dict
 
 
 def read_protein_list(protein_list_file):    # read protein templates
@@ -66,28 +53,10 @@ def read_protein_list(protein_list_file):    # read protein templates
 
     return protein_list_dict
 
-
-
-def read_go(gofile):  # read GO Terms
-
-    f = open(gofile, "rU")
-    text = f.read()
-    f.close()
-
-    go_dict = dict()
-
-    for line in text.splitlines():
-        line = line.strip()
-        values = line.split()
-        go_dict[values[0]] = values[1].split(",")
-
-    return go_dict
-
-
-
 def annotate(args):  # annotate GO term
 
-    workdir, type, obo_dict, go_dict = args[0], args[1], args[2], args[3]
+    workdir, type = args[0], args[1]
+    go_dict = go_dict_aspects[type]
 
     protein_list_file = workdir+"/" + type + "_protein_list"
     if(os.path.exists(protein_list_file)==False or os.path.getsize(protein_list_file)==0):
@@ -123,61 +92,24 @@ def annotate(args):  # annotate GO term
     f.flush()
     f.close()
 
-    fp.find_parents_from_file(resultfile, resultfile+"_new", obo_dict)
-    fp.sort_result(resultfile)
-
-
-# def process(workdir, obo_dict):   # main process
+    fp.find_parents_from_file(resultfile, resultfile+"_new")
 
 def process(args):   # main process
     workdir = args[0]
-    obo_dict = args[1]
-
-    type_list = ["MF", "BP", "CC"]
-
-    for type in type_list:
-
-        run_blast([workdir, type])
-        extract_msa([workdir, type])
-
-        go_term_file = go_term_dir + "/" + type + "_Term"
-        go_dict = read_go(go_term_file)
-
-        create_protein_list([workdir, go_dict, type])
-        annotate([workdir, type, obo_dict, go_dict])
-
-
-def run_blast(args):    # run blast
-    workdir, type = args[0], args[1]
-
-    seq_file = workdir + "/seq.fasta"
-
-    if(os.path.exists(seq_file)==False or os.path.getsize(seq_file)==0):
-        print("seq.fasta is not exist")
-        return
-
-    xml_file = workdir + "/blast_" + type + ".xml"
-    database_file =  database_dir + "/" + type + "/sequence.fasta"
-
-    cmd = blast_file + \
-          " -query " + seq_file + \
-          " -db " + database_file + \
-          " -outfmt 5 -evalue 0.1 " \
-          " -out " + xml_file + \
-          " -num_threads 1" + \
-          " -mt_mode 0"
-
-    os.system(cmd)
+    aspect = args[1]
+    annotate([workdir, aspect])
 
 
 if __name__ == '__main__':
 
     workdir = sys.argv[1]
-    obo_dict = fp.get_obo_dict()
+    aspects = ["MF", "BP", "CC"]
 
     input_name = []
     for name in os.listdir(workdir):
-        input_name.append([workdir + "/" + name + "/", obo_dict])
+        for i in range(len(aspects)):
+            aspect = aspects[i]
+            input_name.append([workdir + "/" + name + "/", aspect])
 
     with closing(Pool(processes=num_threads)) as pool:
         pool.map(process, input_name)

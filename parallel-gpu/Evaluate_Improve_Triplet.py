@@ -19,7 +19,7 @@ def evaluate_result_one(workdir, type, index,  round, data_type, method_name, nu
     os.system("rm -rf " + temp_result_dir)
 
     # create triplet results
-    os.system("python2 " + script_dir + "/Run_pipelines_rank.py " + workdir + " " + test_gene_file + " " + str(number) + " " + type + " " + method_name)
+    os.system("python " + script_dir + "/Run_pipelines_rank.py " + workdir + " " + test_gene_file + " " + str(number) + " " + type + " " + method_name)
 
 
     # copy triplet results

@@ -1,5 +1,10 @@
 import sys
 import os
+import multiprocessing as mp
+from multiprocessing import Pool
+from contextlib import closing
+from configure import  num_threads
+num_threads = min(num_threads, mp.cpu_count()-4)
 
 def read_result(result_file):  # read result file
 
@@ -44,6 +49,10 @@ def create_single_average_result(workdir, index, times, name, type):
     f.flush()
     f.close()
 
+def create_single_average_result_mt(args):
+    workdir, index, times, name, type = args
+    create_single_average_result(workdir, index, times, name, type)
+
 
 def create_average_result(workdir, index, times):  # create average result
 
@@ -55,11 +64,23 @@ def create_average_result(workdir, index, times):  # create average result
     for name in name_list:
         create_single_average_result(workdir, index, times, name, "test")
 
+def create_average_result_mt(workdir, index, times):  # create average result
+
+    name_list = sorted(os.listdir(workdir + "/resultset/test/round1/result" + str(index) + "/"))
+
+    os.system("rm -rf " + workdir + "/result_set/test/result" + str(index) + "/")
+    os.makedirs(workdir + "/result_set/test/result" + str(index) + "/")
+
+    args = [(workdir, index, times, name, "test") for name in name_list]
+    with closing(Pool(num_threads)) as pool:
+        pool.map(create_single_average_result_mt, args)
 
 
 if __name__=="__main__":
 
-    create_average_result(sys.argv[1])
+    #create_average_result(sys.argv[1])
+    create_average_result_mt(sys.argv[1])
+    
 
 
 

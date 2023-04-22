@@ -2,12 +2,12 @@ import os
 import sys
 import Create_Average_Result as car
 import Evaluate_Improve_New as ei
-
+import shutil
 from configure import script_dir, num_round
 
 def get_average_result_from_triplet_network(workdir, type, index, times, select_number):  # get triplet results
 
-    car.create_average_result(workdir + "/" + type + "/", index, times)
+    car.create_average_result_mt(workdir + "/" + type + "/", index, times)
     ei.evaluate_result(workdir, type, index, select_number)
 
 def read_result(result_file):   # read results
@@ -28,7 +28,7 @@ def post_deal1(workdir, type, method_name, data_type, index): # evaluate results
 
     resultdir = workdir + "/" + type + "/result/"
 
-    os.system("python2 " + script_dir + "/Find_Parents.py " + resultdir + " " + type + " " + method_name)
+    os.system("python " + script_dir + "/Find_Parents.py " + resultdir + " " + type + " " + method_name)
 
     copy_result_dir = workdir + "/" + type + "/" + method_name + "_result/" + data_type + "/"
     if (os.path.exists(copy_result_dir) == False):
@@ -38,6 +38,7 @@ def post_deal1(workdir, type, method_name, data_type, index): # evaluate results
         os.system("rm -rf "+copy_result_dir  + "/result" + str(index))
 
     os.system("cp -r " + resultdir + " " + copy_result_dir  + "/result" + str(index))
+    #shutil.copytree(resultdir, copy_result_dir  + "/result" + str(index))
 
 
 def create_single_result_one(workdir, type, index, times, data_type, method_name):  # create cross entropy results

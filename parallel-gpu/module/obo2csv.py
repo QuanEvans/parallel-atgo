@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+from __future__ import print_function
 docstring='''
 obo2csv.py go-basic.obo
     parse OBO format gene ontogology file "go.obo", 
@@ -194,8 +194,8 @@ class obo(dict):
         ## update direct parent ##
         parent_level=0
         add_parent=False
-        print >>sys.stderr,"updating parent level %u for %s"%(parent_level,Aspect)
-        for Term_id,Term in self[Aspect]["Term"].items():
+        print("updating parent level {} for {}".format(parent_level, Aspect), file=sys.stderr)
+        for Term_id,Term in list(self[Aspect]["Term"].items()):
             if Term.is_a:
                 if not Term_id in self[Aspect]["is_a"]:
                     self[Aspect]["is_a"][Term_id]=set(Term.is_a)
@@ -207,8 +207,8 @@ class obo(dict):
         while(add_parent): # loop while new parent is added
             parent_level+=1
             add_parent=False
-            print >>sys.stderr,"updating parent level %u for %s"%(parent_level,Aspect)
-            for Term_id,parent_set in self[Aspect]["is_a"].items():
+            print("updating parent level {} for {}".format(parent_level, Aspect), file=sys.stderr)
+            for Term_id,parent_set in list(self[Aspect]["is_a"].items()):
                 indirect_parent_set=set()
                 for parent in parent_set:
                     parent_id=parent[:10]
@@ -253,7 +253,7 @@ class obo(dict):
         elif Term_id in GO_namespace_to_Aspect and \
             GO_namespace_to_Aspect[Term_id] in self:
             Aspect=GO_namespace_to_Aspect[Term_id]
-            return [v for k,v in self[Aspect]["Term"].items()]
+            return [v for k,v in list(self[Aspect]["Term"].items())]
 
         sys.stderr.write("ERROR! Cannot find GO Term %s\n"%Term_id)
         return ""
@@ -282,7 +282,7 @@ class obo(dict):
             GO_namespace_to_Aspect[Term_id] in self:
             Aspect=GO_namespace_to_Aspect[Term_id]
             return '\n'.join([k+'   '+v for k,v in \
-                self[Aspect]["alt_id"].items()])+'\n'
+                list(self[Aspect]["alt_id"].items())])+'\n'
 
         sys.stderr.write("ERROR! Cannot find GO Term '%s'"%Term_id)
         return ''
@@ -316,7 +316,7 @@ class obo(dict):
             is_a_list.append((len(is_a_entry)-1,is_a_entry))
 
         is_a_list=sorted(is_a_list)
-        is_a_list=[is_a_entry[0]+'\t%u'%is_a_number if number else \
+        is_a_list=[is_a_entry[0]+'\t%d'%is_a_number if number else \
             '\t'.join(is_a_entry) for is_a_number,is_a_entry in is_a_list]
         return '\n'.join(is_a_list)+'\n'
 
@@ -452,7 +452,7 @@ def obo2csv(obo_file="go-basic.obo",prefix=''):
     fp.close()
     file_list.append(os.path.abspath(filename))
 
-    print obo_dict.__str__()
+    print(obo_dict.__str__())
     return file_list
 
 if __name__=="__main__":
@@ -461,6 +461,6 @@ if __name__=="__main__":
         exit()
 
     file_list=obo2csv(sys.argv[1])
-    print "output files:"
+    print("output files:")
     for filename in file_list:
-        print filename
+        print(filename)

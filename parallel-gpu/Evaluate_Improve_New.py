@@ -1,6 +1,7 @@
 import os
 import sys
 from configure import script_dir
+import shutil
 
 def evaluate_result_one(workdir, type, index, data_type, method_name, number):
 
@@ -11,7 +12,8 @@ def evaluate_result_one(workdir, type, index, data_type, method_name, number):
 
     # copy files
     target_dir = workdir + "/" + type + "/result_set/" + data_type + "/result" + str(index) + "/"
-    os.system("mv " + target_dir + "/* " + resultdir + "/")
+    os.system("cp " + target_dir + "/* " + resultdir + "/")
+    #shutil.copytree(target_dir, resultdir)
 
     test_gene_file = workdir + "/" + type + "/" + data_type + "_gene_list"
 
@@ -19,7 +21,7 @@ def evaluate_result_one(workdir, type, index, data_type, method_name, number):
     temp_result_dir = workdir+"/"+type+"/result/"
     os.system("rm -rf "+ temp_result_dir)
 
-    os.system("python2 " + script_dir + "/Run_pipelines_rank.py " + workdir + " " + test_gene_file + " " + str(number) + " " + type+" "+ method_name)
+    os.system("python " + script_dir + "/Run_pipelines_rank.py " + workdir + " " + test_gene_file + " " + str(number) + " " + type+" "+ method_name)
 
     copy_result_dir = workdir + "/" + type + "/" + method_name + "_result/" + data_type + "/"
     if (os.path.exists(copy_result_dir) == False):
@@ -29,6 +31,7 @@ def evaluate_result_one(workdir, type, index, data_type, method_name, number):
         os.system("rm -rf "+copy_result_dir + "/result" + str(index))
 
     os.system("cp -r " + temp_result_dir + " " + copy_result_dir + "/result" + str(index))
+    #shutil.copytree(temp_result_dir, copy_result_dir + "/result" + str(index))
 
 def evaluate_result(workdir, type, index, number):
 

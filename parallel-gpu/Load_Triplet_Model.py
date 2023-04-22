@@ -10,7 +10,15 @@ np.random.seed(1)
 tf.set_random_seed(1)
 from configure import data_dir
 import time
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+            print(f'GPU {gpu} dynamic memory growth enabled')
+    except RuntimeError as e:
+        print(e)
 
 class Triplet_Network(object):
 
@@ -39,7 +47,7 @@ class Triplet_Network(object):
         self.model_dir = data_dir + "/" + type + "/model/" + str(round)+"/"
         self.rewrite_single(self.model_dir, max_iteration)
 
-        self.factor = 1
+        self.factor = 1 # note the changed
         if(self.type=="MF"):
             self.factor = 2
 
@@ -242,19 +250,6 @@ class Triplet_Network(object):
             print("Local current time :", localtime)
 
 
-def use_cuda():
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                print(f'GPU {gpu} dynamic memory growth enabled')
-        except RuntimeError as e:
-            print(e)
-
-
-
 
 if __name__=="__main__":
 
@@ -270,8 +265,6 @@ if __name__=="__main__":
     alpha = 5.0
     beta = 2.0
     batch_size = 512
-
-    use_cuda()
 
     print(type + " " + str(round) + " " + str(max_iteration))
 

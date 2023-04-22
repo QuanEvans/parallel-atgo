@@ -8,10 +8,10 @@ import argparse
 import pathlib
 
 import torch
-
+import esm
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained
 import os
-#os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 def create_parser():
     parser = argparse.ArgumentParser(
         description="Extract per-token representations and model outputs for sequences in a FASTA file"  # noqa
@@ -60,7 +60,8 @@ def create_parser():
 
 
 def main(args):
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    #model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
